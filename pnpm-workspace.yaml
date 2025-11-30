@@ -1,0 +1,4 @@
+packages:
+  - control-panel
+
+minimumReleaseAge: 2880

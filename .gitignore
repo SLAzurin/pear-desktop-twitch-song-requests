@@ -92,3 +92,4 @@ typings/
 out/
 
 response*.json
+cmd/tester
