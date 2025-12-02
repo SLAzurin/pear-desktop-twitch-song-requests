@@ -36,7 +36,7 @@ func NewDBConnection() (*sql.DB, error) {
 func getMigrator() (*migrate.Migrate, error) {
 	var m *migrate.Migrate
 	var err error
-	d, err := iofs.New(data.MigrationsFS, "iofs/migrations")
+	d, err := iofs.New(data.GetMigrationFS(), "iofs/migrations")
 	if err != nil {
 		return nil, err
 	}

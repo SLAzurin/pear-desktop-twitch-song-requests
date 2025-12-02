@@ -5,4 +5,8 @@ import (
 )
 
 //go:embed iofs/migrations/*
-var MigrationsFS embed.FS
+var migrationsFS embed.FS
+
+func GetMigrationFS() *embed.FS {
+	return &migrationsFS
+}

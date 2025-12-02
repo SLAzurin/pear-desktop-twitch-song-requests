@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/data"
 	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/staticservices"
 
 	"github.com/joeyak/go-twitch-eventsub/v3"
@@ -30,7 +31,7 @@ func (s *TwitchWS) StartCtx(ctx context.Context) error {
 	s.client = twitch.NewClient()
 	s.client.OnWelcome(func(message twitch.WelcomeMessage) {
 		s.log.Printf("WELCOME: subscribing to events...\n")
-		clientID := os.Getenv("VITE_TWITCH_CLIENT_ID")
+		clientID := data.GetTwitchClientID()
 		accessToken := s.helixMain.Client().GetUserAccessToken()
 		userID := s.helixMain.GetUserID()
 
