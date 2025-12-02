@@ -33,9 +33,9 @@ function App() {
 		);
 		setParams(params);
 		/*
-      example fragment: #access_token=73d0f8mkabpbmjp921asv2jaidwxn&scope=channel%3Amanage%3Apolls+channel%3Aread%3Apolls&state=c3ab8aa609ea11e793ae92361f002671&token_type=bearer
-      example error: ?error=redirect_mismatch&error_description=Parameter+redirect_uri+does+not+match+registered+URI
-    */
+			example fragment: #access_token=73d0f8mkabpbmjp921asv2jaidwxn&scope=channel%3Amanage%3Apolls+channel%3Aread%3Apolls&state=c3ab8aa609ea11e793ae92361f002671&token_type=bearer
+			example error: ?error=redirect_mismatch&error_description=Parameter+redirect_uri+does+not+match+registered+URI
+		*/
 	}, []);
 
 	return (
