@@ -10,8 +10,8 @@ function App() {
 	// on page load, set the oauth params
 	useEffect(() => {
 		const params = new URLSearchParams();
-		params.append("client_id", "7k7nl6w8e0owouonj7nb9g3k5s6gs5");
-		params.append("redirect_uri", "http://localhost:3999/");
+		params.append("client_id", import.meta.env.VITE_TWITCH_CLIENT_ID || "7k7nl6w8e0owouonj7nb9g3k5s6gs5");
+		params.append("redirect_uri", "http://" + window.location.host + "/oauth/twitch-connect");
 		params.append("response_type", "code");
 		params.append(
 			"scope",

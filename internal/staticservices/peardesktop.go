@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/data"
 )
 
 // SongInfo represents detailed song information from Pear Desktop
@@ -52,7 +54,7 @@ type PearDesktopService struct {
 // NewPearDesktopService creates a new Pear Desktop service instance
 func NewPearDesktopService() *PearDesktopService {
 	return &PearDesktopService{
-		baseURL:   "http://localhost:26538",
+		baseURL:   "http://" + data.GetPearDesktopHost(),
 		authToken: "", // Empty token as mentioned by user
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,

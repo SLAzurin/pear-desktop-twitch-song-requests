@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/data"
 	"github.com/coder/websocket"
 )
 
@@ -266,7 +267,7 @@ func NewPearDesktopService() *PearDesktopService {
 	stopChan := make(chan struct{})
 	return &PearDesktopService{
 		stopChan:          stopChan,
-		wsURL:             "ws://localhost:26538/api/v1/ws",
+		wsURL:             "ws://" + data.GetPearDesktopHost() + "/api/v1/ws",
 		log:               log.New(os.Stderr, "PEAR_DESKTOP_WS ", log.Ldate|log.Ltime),
 		msgChan:           make(chan WebSocketStateUpdate, 100),
 		rcvChan:           make(chan WebSocketStateUpdate, 100),

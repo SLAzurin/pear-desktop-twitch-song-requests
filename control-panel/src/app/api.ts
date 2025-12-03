@@ -1,5 +1,5 @@
 // API service for communicating with the backend
-const API_BASE_URL = "http://localhost:3999/api/v1";
+const API_BASE_URL = "http://" + window.location.host + "/api/v1";
 
 export interface MusicPlayerState {
 	isPlaying: boolean;
