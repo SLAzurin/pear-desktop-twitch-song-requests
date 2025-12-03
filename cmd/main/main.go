@@ -187,8 +187,6 @@ func (a *App) handleMusicPlayerUpdates() {
 		case <-a.ctx.Done():
 			return
 		case update := <-a.pearDesktopWS.RcvChan():
-			log.Printf("Received music player state update: %+v", update)
-
 			a.stateMutex.Lock()
 			// If we don't have a current state, initialize it
 			if a.currentPlayerState == nil {
@@ -209,10 +207,7 @@ func (a *App) handleMusicPlayerUpdates() {
 			} else if update.ElapsedSeconds >= 0 {
 				// POSITION_CHANGED message - only update elapsed time
 				a.currentPlayerState.ElapsedSeconds = update.ElapsedSeconds
-				log.Printf("Updated elapsed time: %d seconds", update.ElapsedSeconds)
 			}
-
-			log.Printf("Current player state: %+v", a.currentPlayerState)
 			a.stateMutex.Unlock()
 		}
 	}

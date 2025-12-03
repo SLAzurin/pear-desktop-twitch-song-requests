@@ -135,9 +135,6 @@ func (s *PearDesktopService) handleMessages() {
 				continue
 			}
 
-			// Log the raw websocket message
-			s.log.Printf("WebSocket received: %s", string(message))
-
 			// Parse the message to determine its type
 			var wsMsg WebSocketMessage
 			if err := json.Unmarshal(message, &wsMsg); err != nil {
@@ -153,7 +150,6 @@ func (s *PearDesktopService) handleMessages() {
 			case "POSITION_CHANGED":
 				// Position changed - update elapsed seconds
 				update.ElapsedSeconds = wsMsg.Position
-				s.log.Printf("Position changed to: %d seconds", wsMsg.Position)
 
 			case "VIDEO_CHANGED":
 				// Video changed - extract song information
@@ -175,12 +171,9 @@ func (s *PearDesktopService) handleMessages() {
 				continue
 			}
 
-			s.log.Printf("WebSocket parsed update: %+v", update)
-
 			// Send to receive channel for external listeners
 			select {
 			case s.rcvChan <- update:
-				s.log.Println("WebSocket update sent to channel")
 			default:
 				s.log.Println("Receive channel full, dropping message")
 			}
