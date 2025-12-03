@@ -1,8 +1,15 @@
 #!/bin/bash
 set -ex
+cd control-panel
+pnpm i
+pnpm build
+cd ..
+rm -rf cmd/main/build
+cp -r control-panel/build cmd/main
+
 appname=pear-desktop-twitch-song-requests
 archfname=(amd64 arm64)
-osfname=(linux windows darwin)
+osfname=(windows linux darwin)
 
 for os in "${osfname[@]}"; do
     for arch in "${archfname[@]}"; do

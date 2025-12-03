@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/appservices"
-	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/data"
 	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/helpers"
 	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/staticservices"
 	"github.com/coder/websocket"
@@ -140,7 +139,7 @@ func (a *App) Run() error {
 	default: // "linux", "freebsd", "openbsd", "netbsd"
 		cmd = "xdg-open"
 	}
-	args = append(args, "http://"+data.GetPearDesktopHost()+"/") // must use localhost here because twitch does not allow 127.0.0.1
+	args = append(args, "http://localhost:3999/") // must use localhost here because twitch does not allow 127.0.0.1
 	exec.Command(cmd, args...).Start()
 
 	// Start server with graceful shutdown
