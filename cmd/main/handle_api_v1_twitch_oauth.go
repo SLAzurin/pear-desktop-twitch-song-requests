@@ -1,5 +1,6 @@
 package main
 
+//lint:file-ignore ST1001 Dot imports by jet
 import (
 	"encoding/json"
 	"errors"
@@ -7,7 +8,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/azuridayo/pear-desktop-twitch-song-requests/gen/model"
+	. "github.com/azuridayo/pear-desktop-twitch-song-requests/gen/table"
 	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/data"
+	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/databaseconn"
+	. "github.com/go-jet/jet/v2/sqlite"
 	"github.com/labstack/echo/v4"
 )
 
@@ -64,6 +69,30 @@ func (a *App) processTwitchOAuth(c echo.Context) error {
 		a.twitchDataStruct.isAuthenticated = true
 		a.twitchDataStruct.userID = response.Data.UserID
 		a.twitchDataStruct.login = response.Data.Login
+
+		db, err := databaseconn.NewDBConnection()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, echo.Map{
+				"error": "cannot save token in database",
+			})
+		}
+		defer func() {
+			db.Close()
+		}()
+		newToken := model.Settings{
+			Key:   data.DB_KEY_TWITCH_ACCESS_TOKEN,
+			Value: authData.AccessToken,
+		}
+		stmt := Settings.INSERT(Settings.AllColumns).MODEL(newToken).ON_CONFLICT(Settings.Key).DO_UPDATE(SET(
+			Settings.Value.SET(String(authData.AccessToken)),
+		))
+
+		_, err = stmt.ExecContext(c.Request().Context(), db)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, echo.Map{
+				"error": "Failed to save token in database",
+			})
+		}
 
 		return c.NoContent(http.StatusOK)
 	} else {

@@ -45,7 +45,7 @@ type App struct {
 	twitchWSService  appservices.TwitchWS
 	ctx              context.Context
 	cancel           context.CancelFunc
-	clients          map[*websocket.Conn]bool
+	clients          map[*websocket.Conn]struct{}
 	clientsMu        sync.RWMutex
 	clientsBroadcast chan string
 }

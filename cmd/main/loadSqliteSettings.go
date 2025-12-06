@@ -19,6 +19,9 @@ func (a *App) loadSqliteSettings() error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		db.Close()
+	}()
 
 	twitchDataStruct := twitchData{}
 	results := []model.Settings{}
