@@ -13,8 +13,7 @@ export function MusicPlayer() {
 	useEffect(() => {
 		if (!resetWs) return;
 		try {
-			const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-			const wsUrl = `${protocol}//${playerState.hostname}/api/v1/ws`;
+			const wsUrl = `ws//${playerState.hostname}/api/v1/ws`;
 
 			const ws = new WebSocket(wsUrl);
 

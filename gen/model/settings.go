@@ -8,8 +8,6 @@
 package model
 
 type Settings struct {
-	Key       string `sql:"primary_key"`
-	Value     string
-	CreatedAt *string
-	UpdatedAt *string
+	Key   string `sql:"primary_key"`
+	Value string
 }

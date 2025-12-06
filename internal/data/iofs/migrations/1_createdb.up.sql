@@ -1,8 +1,6 @@
 CREATE TABLE settings (
     key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    value TEXT NOT NULL
 ) WITHOUT ROWID;
 CREATE TABLE song_requests (
     id INTEGER PRIMARY KEY,
@@ -10,6 +8,5 @@ CREATE TABLE song_requests (
     song_title TEXT NOT NULL,
     artist_name TEXT,
     video_id TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    removed_at TEXT DEFAULT NULL
+    requested_at TEXT DEFAULT CURRENT_TIMESTAMP
 );

@@ -8,11 +8,10 @@
 package model
 
 type SongRequests struct {
-	ID         *int32 `sql:"primary_key"`
-	UserID     string
-	SongTitle  string
-	ArtistName *string
-	VideoID    *string
-	CreatedAt  *string
-	RemovedAt  *string
+	ID          *int32 `sql:"primary_key"`
+	UserID      string
+	SongTitle   string
+	ArtistName  *string
+	VideoID     *string
+	RequestedAt *string
 }

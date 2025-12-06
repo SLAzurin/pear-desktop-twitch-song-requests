@@ -17,13 +17,12 @@ type songRequestsTable struct {
 	sqlite.Table
 
 	// Columns
-	ID         sqlite.ColumnInteger
-	UserID     sqlite.ColumnString
-	SongTitle  sqlite.ColumnString
-	ArtistName sqlite.ColumnString
-	VideoID    sqlite.ColumnString
-	CreatedAt  sqlite.ColumnString
-	RemovedAt  sqlite.ColumnString
+	ID          sqlite.ColumnInteger
+	UserID      sqlite.ColumnString
+	SongTitle   sqlite.ColumnString
+	ArtistName  sqlite.ColumnString
+	VideoID     sqlite.ColumnString
+	RequestedAt sqlite.ColumnString
 
 	AllColumns     sqlite.ColumnList
 	MutableColumns sqlite.ColumnList
@@ -65,29 +64,27 @@ func newSongRequestsTable(schemaName, tableName, alias string) *SongRequestsTabl
 
 func newSongRequestsTableImpl(schemaName, tableName, alias string) songRequestsTable {
 	var (
-		IDColumn         = sqlite.IntegerColumn("id")
-		UserIDColumn     = sqlite.StringColumn("user_id")
-		SongTitleColumn  = sqlite.StringColumn("song_title")
-		ArtistNameColumn = sqlite.StringColumn("artist_name")
-		VideoIDColumn    = sqlite.StringColumn("video_id")
-		CreatedAtColumn  = sqlite.StringColumn("created_at")
-		RemovedAtColumn  = sqlite.StringColumn("removed_at")
-		allColumns       = sqlite.ColumnList{IDColumn, UserIDColumn, SongTitleColumn, ArtistNameColumn, VideoIDColumn, CreatedAtColumn, RemovedAtColumn}
-		mutableColumns   = sqlite.ColumnList{UserIDColumn, SongTitleColumn, ArtistNameColumn, VideoIDColumn, CreatedAtColumn, RemovedAtColumn}
-		defaultColumns   = sqlite.ColumnList{CreatedAtColumn, RemovedAtColumn}
+		IDColumn          = sqlite.IntegerColumn("id")
+		UserIDColumn      = sqlite.StringColumn("user_id")
+		SongTitleColumn   = sqlite.StringColumn("song_title")
+		ArtistNameColumn  = sqlite.StringColumn("artist_name")
+		VideoIDColumn     = sqlite.StringColumn("video_id")
+		RequestedAtColumn = sqlite.StringColumn("requested_at")
+		allColumns        = sqlite.ColumnList{IDColumn, UserIDColumn, SongTitleColumn, ArtistNameColumn, VideoIDColumn, RequestedAtColumn}
+		mutableColumns    = sqlite.ColumnList{UserIDColumn, SongTitleColumn, ArtistNameColumn, VideoIDColumn, RequestedAtColumn}
+		defaultColumns    = sqlite.ColumnList{RequestedAtColumn}
 	)
 
 	return songRequestsTable{
 		Table: sqlite.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:         IDColumn,
-		UserID:     UserIDColumn,
-		SongTitle:  SongTitleColumn,
-		ArtistName: ArtistNameColumn,
-		VideoID:    VideoIDColumn,
-		CreatedAt:  CreatedAtColumn,
-		RemovedAt:  RemovedAtColumn,
+		ID:          IDColumn,
+		UserID:      UserIDColumn,
+		SongTitle:   SongTitleColumn,
+		ArtistName:  ArtistNameColumn,
+		VideoID:     VideoIDColumn,
+		RequestedAt: RequestedAtColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

@@ -17,10 +17,8 @@ type settingsTable struct {
 	sqlite.Table
 
 	// Columns
-	Key       sqlite.ColumnString
-	Value     sqlite.ColumnString
-	CreatedAt sqlite.ColumnString
-	UpdatedAt sqlite.ColumnString
+	Key   sqlite.ColumnString
+	Value sqlite.ColumnString
 
 	AllColumns     sqlite.ColumnList
 	MutableColumns sqlite.ColumnList
@@ -62,23 +60,19 @@ func newSettingsTable(schemaName, tableName, alias string) *SettingsTable {
 
 func newSettingsTableImpl(schemaName, tableName, alias string) settingsTable {
 	var (
-		KeyColumn       = sqlite.StringColumn("key")
-		ValueColumn     = sqlite.StringColumn("value")
-		CreatedAtColumn = sqlite.StringColumn("created_at")
-		UpdatedAtColumn = sqlite.StringColumn("updated_at")
-		allColumns      = sqlite.ColumnList{KeyColumn, ValueColumn, CreatedAtColumn, UpdatedAtColumn}
-		mutableColumns  = sqlite.ColumnList{ValueColumn, CreatedAtColumn, UpdatedAtColumn}
-		defaultColumns  = sqlite.ColumnList{CreatedAtColumn, UpdatedAtColumn}
+		KeyColumn      = sqlite.StringColumn("key")
+		ValueColumn    = sqlite.StringColumn("value")
+		allColumns     = sqlite.ColumnList{KeyColumn, ValueColumn}
+		mutableColumns = sqlite.ColumnList{ValueColumn}
+		defaultColumns = sqlite.ColumnList{}
 	)
 
 	return settingsTable{
 		Table: sqlite.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		Key:       KeyColumn,
-		Value:     ValueColumn,
-		CreatedAt: CreatedAtColumn,
-		UpdatedAt: UpdatedAtColumn,
+		Key:   KeyColumn,
+		Value: ValueColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,
