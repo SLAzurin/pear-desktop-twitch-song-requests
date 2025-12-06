@@ -23,17 +23,15 @@ func (a *App) loadSqliteSettings() error {
 		db.Close()
 	}()
 
-	results := []model.Settings{}
+	result := model.Settings{}
 	stmt := SELECT(Settings.Value).FROM(Settings).WHERE(Settings.Key.EQ(String(data.DB_KEY_TWITCH_ACCESS_TOKEN))).LIMIT(1)
-	err = stmt.QueryContext(a.ctx, db, &results)
+	err = stmt.QueryContext(a.ctx, db, &result)
 	if err != nil {
 		return err
 	}
 
-	for _, result := range results {
-		if result.Key == data.DB_KEY_TWITCH_ACCESS_TOKEN {
-			a.twitchDataStruct.accessToken = result.Value
-		}
+	if result.Value != "" {
+		a.twitchDataStruct.accessToken = result.Value
 	}
 
 	if a.twitchDataStruct.accessToken != "" {

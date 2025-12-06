@@ -49,7 +49,7 @@ type App struct {
 	cancel               context.CancelFunc
 	clients              map[*websocket.Conn]struct{}
 	clientsMu            sync.RWMutex
-	clientsBroadcast     chan []byte
+	clientsBroadcast     chan string
 }
 
 func NewApp() *App {
@@ -62,9 +62,10 @@ func NewApp() *App {
 		ctx:                  ctx,
 		cancel:               cancel,
 		helix:                c,
-		clientsBroadcast:     make(chan []byte),
+		clientsBroadcast:     make(chan string),
 		twitchWSIncomingMsgs: make(chan []byte),
 		clientsMu:            sync.RWMutex{},
+		clients:              make(map[*websocket.Conn]struct{}),
 	}
 }
 
@@ -94,6 +95,8 @@ func (a *App) Run() error {
 				}
 				// always sleep 5s after token validation
 				time.Sleep(5 * time.Second)
+			} else {
+				time.Sleep(5 * time.Second)
 			}
 		}
 	}()
@@ -104,7 +107,7 @@ func (a *App) Run() error {
 			data := <-a.clientsBroadcast
 			a.clientsMu.Lock()
 			for ws := range a.clients {
-				ws.Write(data)
+				websocket.Message.Send(ws, data)
 			}
 			a.clientsMu.Unlock()
 		}

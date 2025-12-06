@@ -31,7 +31,7 @@ func (a *App) handleAppWs(c echo.Context) error {
 			resp, err := a.helix.GetStreams(&helix.StreamsParams{
 				UserLogins: []string{a.twitchDataStruct.login},
 			})
-			if err == nil && resp.Data.Streams[0].ID != "" {
+			if err == nil && len(resp.Data.Streams) > 0 && resp.Data.Streams[0].ID != "" {
 				streamOnline = true
 			}
 		}
@@ -42,8 +42,7 @@ func (a *App) handleAppWs(c echo.Context) error {
 			"expiry_date":   expiryDate,
 			"stream_online": streamOnline,
 		})
-		c.Logger().Info(infoOnConnect)
-		_, err := ws.Write(infoOnConnect)
+		err := websocket.Message.Send(ws, infoOnConnect)
 		if err != nil {
 			// conn already closed
 			return
@@ -51,8 +50,8 @@ func (a *App) handleAppWs(c echo.Context) error {
 
 		// Keep connection alive and handle any incoming messages
 		for {
-			buffer := make([]byte, 1000)
-			_, err := ws.Read(buffer)
+			msg := ""
+			err := websocket.Message.Receive(ws, &msg)
 			if err != nil {
 				// This break marks the ws closure
 				break

@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import { ProcessTwitchOAuth } from "./features/oauthtwitch/ProcessTwitchOAuth.tsx";
 import { MusicPlayer } from "./features/musicplayer/MusicPlayer.tsx";
 import { ProcessTwitchSuccess } from "./features/oauthtwitch/ProcessTwitchSuccess.tsx";
+import { TwitchWS } from "./features/twitchws/TwitchWS.tsx";
 
 const root = ReactDOM.createRoot(
 	document.getElementById("root") as HTMLElement,
@@ -16,7 +17,8 @@ const root = ReactDOM.createRoot(
 root.render(
 	<React.StrictMode>
 		<Provider store={store}>
-			<MusicPlayer></MusicPlayer>
+			<MusicPlayer />
+			<TwitchWS />
 			<BrowserRouter>
 				<Routes>
 					<Route path="/" element={<>home</>} />

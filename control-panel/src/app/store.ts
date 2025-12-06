@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import musicPlayerReducer from "../features/musicplayer/musicPlayerSlice";
+import twitchReducer from "../features/twitchws/twitchSlice";
 
 const store = configureStore({
 	reducer: {
 		musicPlayerState: musicPlayerReducer,
+		twitchState: twitchReducer,
 	},
 });
 
