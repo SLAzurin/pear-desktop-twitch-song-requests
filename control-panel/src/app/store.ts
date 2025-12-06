@@ -1,9 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit";
-import counterReducer from "../features/musicplayer/musicPlayerSlice";
+import musicPlayerReducer from "../features/musicplayer/musicPlayerSlice";
 
 const store = configureStore({
 	reducer: {
-		musicPlayer: counterReducer,
+		musicPlayerState: musicPlayerReducer,
 	},
 });
 

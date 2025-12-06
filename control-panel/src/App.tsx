@@ -14,7 +14,7 @@ function App() {
 		);
 		params.append(
 			"redirect_uri",
-			"http://" + window.location.host + "/oauth/twitch",
+			"http://" + window.location.host + "/oauth/twitch-connect",
 		);
 		params.append(
 			"scope",
