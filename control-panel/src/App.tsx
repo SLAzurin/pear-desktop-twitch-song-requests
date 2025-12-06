@@ -19,12 +19,6 @@ function App() {
 		params.append(
 			"scope",
 			[
-				"chat:read",
-				"chat:edit",
-				"channel:moderate",
-				"whispers:read",
-				"whispers:edit",
-				"moderator:manage:banned_users",
 				"channel:read:redemptions",
 				"user:read:chat",
 				"user:write:chat",

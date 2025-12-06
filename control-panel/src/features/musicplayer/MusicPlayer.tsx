@@ -14,7 +14,7 @@ export function MusicPlayer() {
 		if (!resetWs) return;
 		try {
 			const wsUrl = `ws//${playerState.hostname}/api/v1/ws`;
-
+			console.log("Starting Pear Desktop WebSocket...");
 			const ws = new WebSocket(wsUrl);
 
 			ws.onopen = () => {
