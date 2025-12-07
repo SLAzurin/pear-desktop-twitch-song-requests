@@ -18,10 +18,10 @@ func GetPearDesktopHost() string {
 }
 
 type SongResult struct {
-	Title       string
-	Artist      string
-	VideoID     string
-	RawTimeData string
+	Title       string `json:"tiitle"`
+	Artist      string `json:"artist"`
+	VideoID     string `json:"videoId"`
+	RawTimeData string `json:"-"`
 }
 
 type apiSearchSongResult struct {
@@ -141,6 +141,7 @@ func SearchSong(query string, maxLength int) (*SongResult, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	rawResults := apiSearchSongResult{}
 	err = json.Unmarshal(outBody, &rawResults)

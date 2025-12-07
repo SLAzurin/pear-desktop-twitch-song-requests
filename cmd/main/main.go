@@ -115,8 +115,6 @@ func (a *App) Run() error {
 		}
 	}()
 
-	go songrequests.RunGoroutineAddNextSong(a.ctx)
-
 	log.Println("App is running on port 3999...")
 	// Echo instance
 	e := echo.New()

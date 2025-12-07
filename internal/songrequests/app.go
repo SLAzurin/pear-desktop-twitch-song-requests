@@ -1,14 +1,7 @@
 package songrequests
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"log"
-	"net/http"
-
 	"github.com/joeyak/go-twitch-eventsub/v3"
-	"github.com/labstack/echo/v4"
 )
 
 var queueNextSong chan struct {
@@ -38,27 +31,6 @@ type SongRequestQueueItem struct {
 }
 
 var SongRequestQueue []SongRequestQueueItem
-
-func RunGoroutineAddNextSong(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case msg := <-queueNextSong:
-			b := echo.Map{
-				"videoId":        msg.VideoID,
-				"insertPosition": "INSERT_AFTER_CURRENT_VIDEO",
-			}
-			bb, _ := json.Marshal(b)
-			http.Post("http://"+GetPearDesktopHost()+"/api/v1/queue", "application/json", bytes.NewBuffer(bb))
-			log.Println("added video id " + msg.VideoID)
-		}
-	}
-}
-
-func QueueNextSong(videoId string) {
-	queueNextSong <- struct{ VideoID string }{VideoID: videoId}
-}
 
 func init() {
 	queueNextSong = make(chan struct {
