@@ -4,6 +4,8 @@ appname=pear-desktop-twitch-song-requests
 archfname=(amd64 arm64)
 osfname=(linux windows darwin)
 
+go mod download
+
 for os in "${osfname[@]}"; do
     for arch in "${archfname[@]}"; do
         execname=${appname}_${os}_${arch}
