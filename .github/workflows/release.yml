@@ -75,7 +75,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: Release ${{ github.ref }}
+          name: Release ${{ steps.version-tag-ref.outputs.ref }}
           prerelease: ${{ contains(github.ref, '-rc') }}
           make_latest: true
           generate_release_notes: true
