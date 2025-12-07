@@ -27,9 +27,6 @@ jobs:
           - name: windows
             label: windows-latest
             arch: amd64
-          - name: windows
-            label: windows-latest
-            arch: arm64
 
     steps:
       - uses: actions/checkout@v6
