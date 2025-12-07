@@ -18,7 +18,7 @@ func GetPearDesktopHost() string {
 }
 
 type SongResult struct {
-	Title       string `json:"tiitle"`
+	Title       string `json:"title"`
 	Artist      string `json:"artist"`
 	VideoID     string `json:"videoId"`
 	RawTimeData string `json:"-"`

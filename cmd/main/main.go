@@ -140,6 +140,8 @@ func (a *App) Run() error {
 		cmd = "xdg-open"
 	}
 	args = append(args, "http://localhost:3999/") // must use localhost here because twitch does not allow 127.0.0.1
-	exec.Command(cmd, args...).Start()
+	if a.twitchDataStruct.accessToken == "" || a.songRequestRewardID == "" {
+		exec.Command(cmd, args...).Start()
+	}
 	return e.Start("127.0.0.1:3999")
 }
