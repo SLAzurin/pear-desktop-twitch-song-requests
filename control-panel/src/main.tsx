@@ -26,8 +26,11 @@ root.render(
 					<Route path="/" element={<Home />} />
 					<Route path="/settings" element={<Settings />} />
 					<Route path="/queue" element={<>queue</>} />
-					<Route path="oauth">
-						<Route path="twitch-connect" element={<ConnectWithTwitchEntry />} />
+					<Route path="/oauth">
+						<Route
+							path="twitch-connect"
+							element={<ConnectWithTwitchEntry />}
+						/>
 						<Route path="twitch-success" element={<TwitchSuccess />} />
 						<Route path="twitch" element={<ProcessTwitchOAuth />} />
 					</Route>

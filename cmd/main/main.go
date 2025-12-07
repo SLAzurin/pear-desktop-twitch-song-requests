@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
@@ -122,7 +123,12 @@ func (a *App) Run() error {
 	// Middleware
 	e.Use(middleware.Recover())
 	e.Use(middleware.Logger())
-	e.StaticFS("/", echo.MustSubFS(staticControlPanelFS, "build"))
+	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:       "build",
+		Index:      "index.html",
+		Filesystem: http.FS(staticControlPanelFS),
+		HTML5:      true,
+	}))
 
 	apiV1 := e.Group("/api/v1")
 	apiV1.POST("/twitch-oauth", a.processTwitchOAuth)
