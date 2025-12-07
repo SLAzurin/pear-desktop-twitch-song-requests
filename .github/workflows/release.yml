@@ -8,7 +8,19 @@ on:
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os.label }}
+    strategy:
+      matrix:
+        os:
+          - name: linux
+            label: ubuntu-latest
+          - name: darwin
+            label: macos-latest
+          - name: windows
+            label: windows-latest
+        arch:
+          - arm64
+          - amd64
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
@@ -24,23 +36,26 @@ jobs:
           pnpm -r build
           rm -rf cmd/main/build
           cp -r control-panel/build cmd/main
-          ./build_dist.sh
+          execname=pear-desktop-twitch-song-requests_${{ matrix.os.name }}_${{ matrix.arch }}
+          if [ "${{ matrix.os.name }}" = 'windows' ]; then execname="${execname}.exe" ; fi
+          CGO_ENABLED=1 GOOS=${{ matrix.os.name }} GOARCH=${{ matrix.arch }} go build -ldflags="-s -w" -trimpath -o "$execname" cmd/main/*.go
       - uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: pear-desktop-twitch-song-requests_${{ matrix.os }}_${{ matrix.arch }}
           path: pear-desktop-twitch-song-requests_*
-      - if: github.ref_type == 'tag'
-        run: |
+  publish:
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/download-artifact@v5
+      - run: |
           mv pear-desktop-twitch-song-requests_linux_amd64 pear-desktop-twitch-song-requests_linux_amd64-${{ github.ref }}
           mv pear-desktop-twitch-song-requests_linux_arm64 pear-desktop-twitch-song-requests_linux_arm64-${{ github.ref }}
           mv pear-desktop-twitch-song-requests_windows_amd64.exe pear-desktop-twitch-song-requests_windows_amd64-${{ github.ref }}.exe
           mv pear-desktop-twitch-song-requests_windows_arm64.exe pear-desktop-twitch-song-requests_windows_arm64-${{ github.ref }}.exe
           mv pear-desktop-twitch-song-requests_darwin_amd64 pear-desktop-twitch-song-requests_darwin_amd64-${{ github.ref }}
           mv pear-desktop-twitch-song-requests_darwin_arm64 pear-desktop-twitch-song-requests_darwin_arm64-${{ github.ref }}
-      - if: github.ref_type == 'tag'
-        name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
