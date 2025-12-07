@@ -52,7 +52,7 @@ jobs:
           CGO_ENABLED=1 GOOS=${{ matrix.os.name }} GOARCH=${{ matrix.os.arch }} go build -ldflags="-s -w" -trimpath -o "$execname" cmd/main/*.go
       - uses: actions/upload-artifact@v4
         with:
-          name: pear-desktop-twitch-song-requests_${{ matrix.os }}_${{ matrix.os.arch }}
+          name: pear-desktop-twitch-song-requests_${{ matrix.os.name }}_${{ matrix.os.arch }}
           path: pear-desktop-twitch-song-requests_*
   publish:
     runs-on: ubuntu-latest
