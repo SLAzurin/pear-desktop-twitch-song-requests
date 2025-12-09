@@ -14,12 +14,18 @@ var songQueue = []struct {
 }{}
 
 type playerSonginfo struct {
-	ImageSrc     string `json:"imageSrc"`
-	Artist       string `json:"artist"`
-	SongDuration string `json:"songDuration"`
-	Title        string `json:"title"`
-	Url          string `json:"url"`
+	VideoId          string `json:"videoId"`
+	ImageSrc         string `json:"imageSrc"`
+	Artist           string `json:"artist"`
+	SongDuration     int    `json:"songDuration"`
+	AlternativeTitle string `json:"alternativeTitle"`
 }
+
+func (s playerSonginfo) GetUrl() string {
+	return "https://youtu.be/" + s.VideoId
+}
+
+var playerInfoMutex sync.RWMutex
 
 var playerInfo = struct {
 	Position  int
