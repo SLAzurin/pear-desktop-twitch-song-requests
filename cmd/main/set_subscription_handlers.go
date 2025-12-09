@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"log"
@@ -59,8 +58,7 @@ func (a *App) SetSubscriptionHandlers() {
 			if !a.streamOnline && !isBroadcaster {
 				return
 			}
-			s := songrequests.ParseSearchQuery(event.Message.Text)
-			song, err := songrequests.SearchSong(s, 600)
+			err := a.songRequestLogic(event.Message.Text, event)
 			if err != nil {
 				a.helix.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
@@ -68,108 +66,7 @@ func (a *App) SetSubscriptionHandlers() {
 					Message:              err.Error(),
 					ReplyParentMessageID: event.MessageId,
 				})
-				return
 			}
-
-			resp, err := http.Get("http://" + songrequests.GetPearDesktopHost() + "/api/v1/queue")
-			if err != nil {
-				emsg := "Internal error when checking if song is already in queue."
-				log.Println(emsg, err)
-				a.helix.SendChatMessage(&helix.SendChatMessageParams{
-					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
-					Message:              emsg,
-					ReplyParentMessageID: event.MessageId,
-				})
-				return
-			}
-			qb, err := io.ReadAll(resp.Body)
-			if err != nil {
-				emsg := "Internal error processing data to check if song is already in queue."
-				log.Println(emsg, err)
-				a.helix.SendChatMessage(&helix.SendChatMessageParams{
-					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
-					Message:              emsg,
-					ReplyParentMessageID: event.MessageId,
-				})
-				return
-			}
-			defer resp.Body.Close()
-			queue := struct {
-				Items []struct {
-					PlaylistPanelVideoRenderer struct {
-						VideoId         string `json:"videoId"`
-						Selected        bool   `json:"selected"`
-						ShortByLineText struct {
-							Runs []struct {
-								Text string `json:"text"`
-							} `json:"runs"`
-						} `json:"shortByLineText"`
-						// LongBylineText struct {
-						// 	Runs []struct {
-						// 		Text string `json:"text"`
-						// 	} `json:"runs"`
-						// } `json:"longBylineText"`
-						Title struct {
-							Runs []struct {
-								Text string `json:"text"`
-							} `json:"runs"`
-						} `json:"title"`
-					} `json:"playlistPanelVideoRenderer"`
-				} `json:"items"`
-			}{}
-
-			err = json.Unmarshal(qb, &queue)
-			if err != nil {
-				emsg := "Internal error queue data integrity check failed if song is already in queue."
-				log.Println(emsg, err)
-				a.helix.SendChatMessage(&helix.SendChatMessageParams{
-					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
-					Message:              emsg,
-					ReplyParentMessageID: event.MessageId,
-				})
-				return
-			}
-			foundSelected := false
-			songExistsInQueue := false
-			for _, v := range queue.Items {
-				if v.PlaylistPanelVideoRenderer.Selected {
-					foundSelected = true
-				}
-				if !foundSelected {
-					continue
-				}
-				if song.VideoID == v.PlaylistPanelVideoRenderer.VideoId {
-					songExistsInQueue = true
-					break
-				}
-			}
-
-			if songExistsInQueue {
-				msg := "Song is already in queue!"
-				a.helix.SendChatMessage(&helix.SendChatMessageParams{
-					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
-					Message:              msg,
-					ReplyParentMessageID: event.MessageId,
-				})
-				return
-			}
-
-			b := echo.Map{
-				"videoId":        song.VideoID,
-				"insertPosition": "INSERT_AFTER_CURRENT_VIDEO",
-			}
-			bb, _ := json.Marshal(b)
-			http.Post("http://"+songrequests.GetPearDesktopHost()+"/api/v1/queue", "application/json", bytes.NewBuffer(bb))
-			a.helix.SendChatMessage(&helix.SendChatMessageParams{
-				BroadcasterID:        event.BroadcasterUserId,
-				SenderID:             a.twitchDataStruct.userID,
-				Message:              "Added song: " + song.Title + " - " + song.Artist + " " + "https://youtu.be/" + song.VideoID,
-				ReplyParentMessageID: event.MessageId,
-			})
 			return
 		}
 

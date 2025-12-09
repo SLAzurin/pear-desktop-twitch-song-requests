@@ -128,7 +128,7 @@ const (
 )
 
 // make sure to sanitize url for music.youtube.com / youtu.be / youtube.com/watch?v=
-func SearchSong(query string, maxLength int) (*SongResult, error) {
+func SearchSong(query string, minLength int, maxLength int) (*SongResult, error) {
 	inBody := echo.Map{
 		"query": query,
 	}
@@ -334,7 +334,7 @@ func SearchSong(query string, maxLength int) (*SongResult, error) {
 	if selectedSong != nil {
 		// "1:00:04" or "10:00" or "1:00" or err
 		// err usually means its safe
-		isValid := validateTime(selectedSong.RawTimeData, maxLength)
+		isValid := validateTime(selectedSong.RawTimeData, minLength, maxLength)
 		if !isValid {
 			return nil, errors.New("search songs: song duration exceeds max allowed")
 		}
@@ -344,10 +344,12 @@ func SearchSong(query string, maxLength int) (*SongResult, error) {
 	return nil, errors.New("search songs: no results")
 }
 
-func validateTime(s string, max int) bool {
+func validateTime(s string, min, max int) bool {
 	template := "2000-01-01 00:00:00"
 	tmax, _ := time.Parse(time.DateTime, template)
 	tmax = tmax.Add(time.Duration(max) * time.Second)
+	tmin, _ := time.Parse(time.DateTime, template)
+	tmin = tmin.Add(time.Duration(min) * time.Second)
 	if len(s) > len(template) {
 		// Loose return when error occurs
 		return true
@@ -359,5 +361,5 @@ func validateTime(s string, max int) bool {
 		return true
 	}
 
-	return !t.After(tmax)
+	return !(t.After(tmax) || t.Before(tmin))
 }
