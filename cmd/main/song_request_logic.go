@@ -70,10 +70,6 @@ func (a *App) commitAddSongToQueue(song *songrequests.SongResult, event twitch.E
 			time.Sleep(200 * time.Millisecond)
 			playerInfoMutex.RLock()
 		}
-		if !playerInfo.IsPlaying {
-			playerInfoMutex.RUnlock()
-			return
-		}
 	}
 	playerInfoMutex.RUnlock()
 	// Finally done lock unlock timing checks
@@ -112,31 +108,6 @@ func (a *App) commitAddSongToQueue(song *songrequests.SongResult, event twitch.E
 
 	// Fetch new q details
 	// Get q info
-	resp, err = http.Get("http://" + songrequests.GetPearDesktopHost() + "/api/v1/queue")
-	if err != nil || resp.StatusCode != http.StatusOK {
-		emsg := "Internal error when checking if song is already in queue. Disregard previous message."
-		log.Println(emsg, err)
-		a.helix.SendChatMessage(&helix.SendChatMessageParams{
-			BroadcasterID:        event.BroadcasterUserId,
-			SenderID:             a.twitchDataStruct.userID,
-			Message:              emsg,
-			ReplyParentMessageID: event.MessageId,
-		})
-		return
-	}
-	qb, err := io.ReadAll(resp.Body)
-	if err != nil {
-		emsg := "Internal error processing data to check if song is already in queue. Disregard previous message."
-		log.Println(emsg, err)
-		a.helix.SendChatMessage(&helix.SendChatMessageParams{
-			BroadcasterID:        event.BroadcasterUserId,
-			SenderID:             a.twitchDataStruct.userID,
-			Message:              emsg,
-			ReplyParentMessageID: event.MessageId,
-		})
-		return
-	}
-	defer resp.Body.Close()
 	queue := struct {
 		Items []struct {
 			PlaylistPanelVideoRenderer struct {
@@ -161,36 +132,73 @@ func (a *App) commitAddSongToQueue(song *songrequests.SongResult, event twitch.E
 		} `json:"items"`
 	}{}
 
-	err = json.Unmarshal(qb, &queue)
-	if err != nil {
-		emsg := "Failed to check queue order. Must fix the song order manually!"
-		log.Println(emsg, err)
-		a.helix.SendChatMessage(&helix.SendChatMessageParams{
-			BroadcasterID:        event.BroadcasterUserId,
-			SenderID:             a.twitchDataStruct.userID,
-			Message:              emsg,
-			ReplyParentMessageID: event.MessageId,
-		})
-		return
+	nowIndex := -1
+	addedSongIndex := -1
+	active := true
+	breakAfter3s := time.After(time.Second * 3)
+	for active {
+		time.Sleep(100 * time.Millisecond)
+		select {
+		case <-breakAfter3s:
+			active = false
+		default:
+			resp, err = http.Get("http://" + songrequests.GetPearDesktopHost() + "/api/v1/queue")
+			if err != nil || resp.StatusCode != http.StatusOK {
+				emsg := "Internal error when checking if song is already in queue. Disregard previous message."
+				log.Println(emsg, err)
+				a.helix.SendChatMessage(&helix.SendChatMessageParams{
+					BroadcasterID:        event.BroadcasterUserId,
+					SenderID:             a.twitchDataStruct.userID,
+					Message:              emsg,
+					ReplyParentMessageID: event.MessageId,
+				})
+				return
+			}
+			qb, err := io.ReadAll(resp.Body)
+			if err != nil {
+				emsg := "Internal error processing data to check if song is already in queue. Disregard previous message."
+				log.Println(emsg, err)
+				a.helix.SendChatMessage(&helix.SendChatMessageParams{
+					BroadcasterID:        event.BroadcasterUserId,
+					SenderID:             a.twitchDataStruct.userID,
+					Message:              emsg,
+					ReplyParentMessageID: event.MessageId,
+				})
+				return
+			}
+			err = json.Unmarshal(qb, &queue)
+			resp.Body.Close()
+			if err != nil {
+				emsg := "Failed to check queue order. Must fix the song order manually!"
+				log.Println(emsg, err)
+				a.helix.SendChatMessage(&helix.SendChatMessageParams{
+					BroadcasterID:        event.BroadcasterUserId,
+					SenderID:             a.twitchDataStruct.userID,
+					Message:              emsg,
+					ReplyParentMessageID: event.MessageId,
+				})
+				return
+			}
+
+			for i, v := range queue.Items {
+				if v.PlaylistPanelVideoRenderer.Selected {
+					nowIndex = i
+					// nowIndex = v.PlaylistPanelVideoRenderer.NavigationEndpoint.WatchEndpoint.Index
+				}
+				if song.VideoID == v.PlaylistPanelVideoRenderer.VideoId {
+					// addedSongIndex = v.PlaylistPanelVideoRenderer.NavigationEndpoint.WatchEndpoint.Index
+					addedSongIndex = i
+					break
+				}
+			}
+			if nowIndex != -1 && addedSongIndex != -1 {
+				active = false
+			}
+		}
 	}
 
 	// get song index & drag song down to wherever is needed
-	nowIndex := -1
-	for _, v := range queue.Items {
-		if v.PlaylistPanelVideoRenderer.Selected {
-			nowIndex = v.PlaylistPanelVideoRenderer.NavigationEndpoint.WatchEndpoint.Index
-			break
-		}
-		// if song.VideoID == v.PlaylistPanelVideoRenderer.VideoId {
-		// 	addedSongIndex = v.PlaylistPanelVideoRenderer.NavigationEndpoint.WatchEndpoint.Index
-		// 	break
-		// }
-	}
-	// log.Println(nowIndex, addedSongIndex)
-	// path1 := filepath.Join("response_queue.json")
-	// os.WriteFile(path1, qb, 0644)
-
-	if nowIndex == -1 {
+	if nowIndex == -1 || addedSongIndex == -1 {
 		a.helix.SendChatMessage(&helix.SendChatMessageParams{
 			BroadcasterID:        event.BroadcasterUserId,
 			SenderID:             a.twitchDataStruct.userID,
@@ -201,12 +209,10 @@ func (a *App) commitAddSongToQueue(song *songrequests.SongResult, event twitch.E
 	}
 
 	// Drag song into the right order
-	nowIndex += len(songQueue)
-
 	b2, _ := json.Marshal(echo.Map{
-		"toIndex": nowIndex + 1 + len(songQueue),
+		"toIndex": nowIndex + len(songQueue),
 	})
-	req, _ := http.NewRequest(http.MethodPatch, "http://"+songrequests.GetPearDesktopHost()+"/api/v1/queue/"+strconv.Itoa(nowIndex+1), bytes.NewBuffer(b2))
+	req, _ := http.NewRequest(http.MethodPatch, "http://"+songrequests.GetPearDesktopHost()+"/api/v1/queue/"+strconv.Itoa(addedSongIndex), bytes.NewBuffer(b2))
 	req.Header.Set("Content-Type", "application/json")
 	resp2, err := http.DefaultClient.Do(req)
 	if err != nil || resp2.StatusCode != http.StatusNoContent {
