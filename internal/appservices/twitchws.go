@@ -27,6 +27,7 @@ func (s *TwitchWS) StartCtx(ctx context.Context) error {
 	s.log.Println("Twitch WS service starting...")
 
 	s.client = twitch.NewClient()
+	hasSubError := false
 	s.client.OnWelcome(func(message twitch.WelcomeMessage) {
 		s.log.Printf("WELCOME: subscribing to events...\n")
 		clientID := data.GetTwitchClientID()
@@ -51,7 +52,12 @@ func (s *TwitchWS) StartCtx(ctx context.Context) error {
 			})
 			if err != nil {
 				s.log.Printf("ERROR: %v\n", err)
+				s.log.Printf("Failed to subscribe to %s", event)
+				hasSubError = true
 			}
+		}
+		if hasSubError {
+			s.log.Printf("There were issues when listening to Twitch events. Please refresh your Twitch token.")
 		}
 	})
 	s.client.OnRevoke(func(message twitch.RevokeMessage) {

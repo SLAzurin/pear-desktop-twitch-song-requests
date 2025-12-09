@@ -8,6 +8,8 @@ require (
 	github.com/joeyak/go-twitch-eventsub/v3 v3.0.1
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/nicklaw5/helix/v2 v2.32.0
+	github.com/recws-org/recws v1.4.0
+	github.com/valyala/fastjson v1.6.4
 	golang.org/x/net v0.47.0
 )
 
@@ -16,6 +18,8 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect

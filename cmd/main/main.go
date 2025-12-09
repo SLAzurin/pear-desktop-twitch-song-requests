@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"runtime"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/appservices"
@@ -20,6 +22,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/nicklaw5/helix/v2"
+	"github.com/recws-org/recws"
 	"golang.org/x/net/websocket"
 )
 
@@ -32,27 +35,34 @@ type twitchData = struct {
 }
 
 func main() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	helpers.PreflightTest()
 	app := NewApp()
 
-	log.Println(app.Run())
+	go func() {
+		log.Println(app.Run())
+	}()
+	<-sigs
 	app.cancel()
+
 	fmt.Print("Press 'Enter' to continue...")
 	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
 
 type App struct {
-	twitchDataStruct     *twitchData
-	helix                *helix.Client
-	twitchWSService      *appservices.TwitchWS
-	streamOnline         bool
-	twitchWSIncomingMsgs chan []byte
-	ctx                  context.Context
-	cancel               context.CancelFunc
-	clients              map[*websocket.Conn]struct{}
-	clientsMu            sync.RWMutex
-	clientsBroadcast     chan string
-	songRequestRewardID  string
+	twitchDataStruct        *twitchData
+	helix                   *helix.Client
+	twitchWSService         *appservices.TwitchWS
+	streamOnline            bool
+	twitchWSIncomingMsgs    chan []byte
+	pearDesktopIncomingMsgs chan []byte
+	ctx                     context.Context
+	cancel                  context.CancelFunc
+	clients                 map[*websocket.Conn]struct{}
+	clientsMu               sync.RWMutex
+	clientsBroadcast        chan string
+	songRequestRewardID     string
 }
 
 func NewApp() *App {
@@ -61,14 +71,15 @@ func NewApp() *App {
 		ClientID: data.GetTwitchClientID(),
 	})
 	return &App{
-		twitchDataStruct:     &twitchData{},
-		ctx:                  ctx,
-		cancel:               cancel,
-		helix:                c,
-		clientsBroadcast:     make(chan string),
-		twitchWSIncomingMsgs: make(chan []byte),
-		clientsMu:            sync.RWMutex{},
-		clients:              make(map[*websocket.Conn]struct{}),
+		twitchDataStruct:        &twitchData{},
+		ctx:                     ctx,
+		cancel:                  cancel,
+		helix:                   c,
+		clientsBroadcast:        make(chan string),
+		twitchWSIncomingMsgs:    make(chan []byte),
+		clientsMu:               sync.RWMutex{},
+		clients:                 make(map[*websocket.Conn]struct{}),
+		pearDesktopIncomingMsgs: make(chan []byte),
 	}
 }
 
@@ -81,6 +92,44 @@ func (a *App) Run() error {
 	if err != nil {
 		return err
 	}
+
+	// Auto reconnect pear desktop and funnel mesasges to channel
+	ws := recws.RecConn{
+		RecIntvlFactor: 1,               // multiplier backoff
+		RecIntvlMin:    3 * time.Second, // start time
+		NonVerbose:     true,
+		SubscribeHandler: func() error {
+			time.Sleep(time.Second)
+			log.Println("Connected to Pear Desktop")
+			return nil
+		},
+	}
+	ws.Dial("ws://"+songrequests.GetPearDesktopHost()+"/api/v1/ws", nil)
+	go func() {
+		for {
+			select {
+			case <-a.ctx.Done():
+				go ws.Close()
+				return
+			default:
+				if !ws.IsConnected() {
+					time.Sleep(3 * time.Second)
+					continue
+				}
+				_, message, err := ws.Conn.ReadMessage()
+				if err != nil {
+					time.Sleep(3 * time.Second)
+					continue
+				}
+
+				a.pearDesktopIncomingMsgs <- message
+			}
+
+		}
+	}()
+
+	// Handle Pear desktop messages
+	go a.handlePearDesktopMsgs()
 
 	// Auto reconnect twitch ws
 	go func() {
@@ -122,7 +171,6 @@ func (a *App) Run() error {
 
 	// Middleware
 	e.Use(middleware.Recover())
-	e.Use(middleware.Logger())
 	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		Root:       "build",
 		Index:      "index.html",
