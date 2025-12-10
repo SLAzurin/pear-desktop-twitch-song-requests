@@ -25,8 +25,6 @@ func (s playerSonginfo) GetUrl() string {
 	return "https://youtu.be/" + s.VideoId
 }
 
-var playerInfoMutex sync.RWMutex
-
 var playerInfo = struct {
 	Position  int
 	IsPlaying bool

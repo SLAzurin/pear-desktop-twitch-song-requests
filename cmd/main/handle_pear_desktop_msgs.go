@@ -22,11 +22,11 @@ func (a *App) handlePearDesktopMsgs() {
 			msgType := string(v.GetStringBytes("type"))
 			switch msgType {
 			case "POSITION_CHANGED":
-				playerInfoMutex.Lock()
+				songQueueMutex.Lock()
 				playerInfo.Position = v.GetInt("position")
-				playerInfoMutex.Unlock()
+				songQueueMutex.Unlock()
 			case "PLAYER_INFO":
-				playerInfoMutex.Lock()
+				songQueueMutex.Lock()
 				playerInfo.IsPlaying = v.GetBool("isPlaying")
 				playerInfo.Position = v.GetInt("position")
 				songinfo := playerSonginfo{
@@ -37,9 +37,8 @@ func (a *App) handlePearDesktopMsgs() {
 					VideoId:          string(v.GetStringBytes("song", "videoId")),
 				}
 				playerInfo.Song = songinfo
-				playerInfoMutex.Unlock()
+				songQueueMutex.Unlock()
 			case "VIDEO_CHANGED":
-				playerInfoMutex.Lock()
 				songQueueMutex.Lock()
 				newVideoId := string(v.GetStringBytes("song", "videoId"))
 				playerInfo.Position = v.GetInt("position")
@@ -64,13 +63,12 @@ func (a *App) handlePearDesktopMsgs() {
 						log.Println("queue was wiped because it was out of sync with Pear Desktop")
 					}
 				}
-				playerInfoMutex.Unlock()
 				songQueueMutex.Unlock()
 			case "PLAYER_STATE_CHANGED":
-				playerInfoMutex.Lock()
+				songQueueMutex.Lock()
 				playerInfo.Position = v.GetInt("position")
 				playerInfo.IsPlaying = v.GetBool("isPlaying")
-				playerInfoMutex.Unlock()
+				songQueueMutex.Unlock()
 			default:
 				// Nothing, ignore non important
 			}

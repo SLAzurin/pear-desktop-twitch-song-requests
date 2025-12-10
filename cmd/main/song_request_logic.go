@@ -59,19 +59,19 @@ func (a *App) songRequestLogic(q string, event twitch.EventChannelChatMessage) e
 
 func (a *App) commitAddSongToQueue(song *songrequests.SongResult, event twitch.EventChannelChatMessage) {
 	// Check if song ends <4s to prevent player state changes timing fkup
-	playerInfoMutex.RLock()
+	songQueueMutex.RLock()
 	if playerInfo.IsPlaying && playerInfo.Song.SongDuration-playerInfo.Position <= 4 {
 		currentVideoId := playerInfo.Song.VideoId
-		playerInfoMutex.RUnlock()
+		songQueueMutex.RUnlock()
 		// This unlock relock allows for <1s remaining time check
-		playerInfoMutex.RLock()
+		songQueueMutex.RLock()
 		for playerInfo.IsPlaying && currentVideoId == playerInfo.Song.VideoId && !(playerInfo.Position <= 5) {
-			playerInfoMutex.RUnlock()
+			songQueueMutex.RUnlock()
 			time.Sleep(200 * time.Millisecond)
-			playerInfoMutex.RLock()
+			songQueueMutex.RLock()
 		}
 	}
-	playerInfoMutex.RUnlock()
+	songQueueMutex.RUnlock()
 	// Finally done lock unlock timing checks
 
 	// Actually put song in queue
@@ -101,6 +101,11 @@ func (a *App) commitAddSongToQueue(song *songrequests.SongResult, event twitch.E
 		requestedBy: event.ChatterUserLogin,
 		song:        *song,
 	})
+
+	log.Println("songqueue list")
+	for i, v := range songQueue {
+		log.Println(i+1, v.song, "-", v.song.Artist)
+	}
 	defer songQueueMutex.Unlock()
 
 	// save to history
