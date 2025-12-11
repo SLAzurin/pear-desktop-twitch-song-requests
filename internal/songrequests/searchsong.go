@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -18,10 +19,12 @@ func GetPearDesktopHost() string {
 }
 
 type SongResult struct {
-	Title       string `json:"title"`
-	Artist      string `json:"artist"`
-	VideoID     string `json:"videoId"`
-	RawTimeData string `json:"-"`
+	Title        string `json:"title"`
+	Artist       string `json:"artist"`
+	VideoID      string `json:"videoId"`
+	RawTimeData  string `json:"-"`
+	ImageUrl     string `json:"imageUrl"`
+	SearchOrigin string `json:"-"`
 }
 
 type apiSearchSongResult struct {
@@ -35,6 +38,15 @@ type apiSearchSongResult struct {
 								MusicShelfRenderer *struct {
 									Contents []struct {
 										MusicResponsiveListItemRenderer struct {
+											Thumbnail struct {
+												MusicThumbnailRenderer struct {
+													Thumbnail struct {
+														Thumbnails []struct {
+															Url string `json:"url"`
+														} `json:"thumbnails"`
+													} `json:"thumbnail"`
+												} `json:"musicThumbnailRenderer"`
+											} `json:"thumbnail"`
 											FlexColumns []struct {
 												MusicResponsiveListItemFlexColumnRenderer struct {
 													Text struct {
@@ -82,6 +94,15 @@ type apiSearchSongResult struct {
 									} `json:"contents"`
 								} `json:"musicShelfRenderer"`
 								MusicCardShelfRenderer *struct {
+									Thumbnail struct {
+										MusicThumbnailRenderer struct {
+											Thumbnail struct {
+												Thumbnails []struct {
+													Url string `json:"url"`
+												} `json:"thumbnails"`
+											} `json:"thumbnail"`
+										} `json:"musicThumbnailRenderer"`
+									} `json:"thumbnail"`
 									Subtitle struct {
 										Runs []struct {
 											Text               string `json:"text"`
@@ -130,7 +151,7 @@ const (
 // make sure to sanitize url for music.youtube.com / youtu.be / youtube.com/watch?v=
 func SearchSong(query string, minLength int, maxLength int) (*SongResult, error) {
 	inBody := echo.Map{
-		"query": query,
+		"query": strings.TrimSpace(query),
 	}
 	ib, _ := json.Marshal(inBody)
 	resp, err := http.Post("http://"+pearDesktopHost+"/api/v1/search", "application/json", bytes.NewBuffer(ib))
@@ -223,10 +244,12 @@ func SearchSong(query string, minLength int, maxLength int) (*SongResult, error)
 				timeData := content.MusicCardShelfRenderer.Subtitle.Runs[len(content.MusicCardShelfRenderer.Subtitle.Runs)-1].Text
 
 				songResults = append(songResults, SongResult{
-					Title:       title,
-					Artist:      artistOrUploader,
-					VideoID:     videoId,
-					RawTimeData: timeData,
+					Title:        title,
+					Artist:       artistOrUploader,
+					VideoID:      videoId,
+					RawTimeData:  timeData,
+					ImageUrl:     content.MusicCardShelfRenderer.Thumbnail.MusicThumbnailRenderer.Thumbnail.Thumbnails[0].Url,
+					SearchOrigin: "MusicCardShelfRenderer",
 				})
 			}
 
@@ -239,10 +262,12 @@ func SearchSong(query string, minLength int, maxLength int) (*SongResult, error)
 					artistOrUploader := ""
 					mediaType := ""
 					timeData := ""
+					imageUrl := ""
 
 					if content.MusicResponsiveListItemRenderer.Overlay != nil {
 						if content.MusicResponsiveListItemRenderer.Overlay.MusicItemThumbnailOverlayRenderer.Content.MusicPlayButtonRenderer.PlayNavigationEndpoint.WatchEndpoint != nil {
 							mediaType = content.MusicResponsiveListItemRenderer.Overlay.MusicItemThumbnailOverlayRenderer.Content.MusicPlayButtonRenderer.PlayNavigationEndpoint.WatchEndpoint.WatchEndpointMusicSupportedConfigs.WatchEndpointMusicConfig.MusicVideoType
+							imageUrl = content.MusicResponsiveListItemRenderer.Thumbnail.MusicThumbnailRenderer.Thumbnail.Thumbnails[0].Url
 						}
 					}
 
@@ -308,10 +333,12 @@ func SearchSong(query string, minLength int, maxLength int) (*SongResult, error)
 					}
 
 					songResults = append(songResults, SongResult{
-						Title:       mediaTitle,
-						Artist:      artistOrUploader,
-						VideoID:     videoId,
-						RawTimeData: timeData,
+						Title:        mediaTitle,
+						Artist:       artistOrUploader,
+						VideoID:      videoId,
+						RawTimeData:  timeData,
+						ImageUrl:     imageUrl,
+						SearchOrigin: "MusicShelfRenderer",
 					})
 				}
 			}

@@ -175,9 +175,9 @@ func (a *App) SetSubscriptionHandlers() {
 			skipMutex.Lock()
 			if time.Now().After(lastSkipped.Add(time.Second * -10)) {
 				hasSkipped = true
-				songQueueMutex.RLock()
+				songQueueMutex.Lock()
 				http.Post("http://"+songrequests.GetPearDesktopHost()+"/api/v1/next", "application/json", nil)
-				songQueueMutex.RUnlock()
+				songQueueMutex.Unlock()
 				lastSkipped = time.Now()
 			}
 			skipMutex.Unlock()

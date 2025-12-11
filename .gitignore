@@ -103,3 +103,4 @@ pear-desktop-twitch-song-requests.db
 /pear-desktop-twitch-song-requests_windows_*
 local-run-debug.sh
 __debug_bin*
+sqlite3*

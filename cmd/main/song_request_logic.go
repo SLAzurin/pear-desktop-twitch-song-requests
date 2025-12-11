@@ -1,5 +1,6 @@
 package main
 
+//lint:file-ignore ST1001 Dot imports by jet
 import (
 	"bytes"
 	"encoding/json"
@@ -9,6 +10,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/azuridayo/pear-desktop-twitch-song-requests/gen/model"
+	. "github.com/azuridayo/pear-desktop-twitch-song-requests/gen/table"
+	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/databaseconn"
 	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/songrequests"
 	"github.com/joeyak/go-twitch-eventsub/v3"
 	"github.com/labstack/echo/v4"
@@ -66,7 +70,36 @@ func (a *App) songRequestLogic(song *songrequests.SongResult, event twitch.Event
 	})
 
 	// save to history
-	// TODO
+	go func() {
+		db, err := databaseconn.NewDBConnection()
+		if err != nil {
+			log.Println("Somehow failed to add !sr history to database")
+			return
+		}
+		srData := model.SongRequests{
+			VideoID:    song.VideoID,
+			SongTitle:  song.Title,
+			ArtistName: song.Artist,
+			ImageURL:   song.ImageUrl,
+		}
+		stmt := SongRequests.INSERT(SongRequests.AllColumns).MODEL(srData).ON_CONFLICT(SongRequests.VideoID).DO_NOTHING()
+		_, err = stmt.Exec(db)
+		if err != nil {
+			log.Println("Somehow failed to save !sr song to database")
+			return
+		}
+		srrData := model.SongRequestRequesters{
+			VideoID:        song.VideoID,
+			TwitchUsername: event.ChatterUserLogin,
+			RequestedAt:    time.Now().Local().Format(time.RFC1123),
+		}
+		stmt = SongRequestRequesters.INSERT(SongRequestRequesters.AllColumns).MODEL(srrData)
+		_, err = stmt.Exec(db)
+		if err != nil {
+			log.Println("Somehow failed to save !sr requester name to database")
+			return
+		}
+	}()
 
 	// Fetch new q details
 	// Get q info
