@@ -93,7 +93,7 @@ func (a *App) songRequestLogic(song *songrequests.SongResult, event twitch.Event
 			TwitchUsername: event.ChatterUserLogin,
 			RequestedAt:    time.Now().Local().Format(time.RFC1123),
 		}
-		stmt = SongRequestRequesters.INSERT(SongRequests.AllColumns).MODEL(srrData)
+		stmt = SongRequestRequesters.INSERT(SongRequestRequesters.AllColumns).MODEL(srrData)
 		_, err = stmt.Exec(db)
 		if err != nil {
 			log.Println("Somehow failed to save !sr requester name to database")

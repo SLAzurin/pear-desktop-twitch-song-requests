@@ -66,6 +66,16 @@ func main() {
 		"!sr yena good morning",
 		"!sr yena being a good girl hurts",
 		"!sr yena smartphone",
+		"!sr yena smiley",
+		"!sr yena star",
+		"!sr yena anyone but you",
+		"!sr yena it was love",
+		"!sr yena love war",
+		"!sr yena hate rodrigo",
+		"!sr yena hello, goodbye",
+		"!sr yena good girls in the dark",
+		"!sr yena sugar",
+		"!sr yena lxxk 2 u",
 		"!skip",
 	}
 
