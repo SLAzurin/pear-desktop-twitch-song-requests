@@ -7,9 +7,8 @@
 
 package model
 
-type SongRequests struct {
-	VideoID    string `sql:"primary_key"`
-	SongTitle  string
-	ArtistName string
-	ImageURL   string
+type SongRequestRequesters struct {
+	VideoID        string
+	TwitchUsername string
+	RequestedAt    string
 }

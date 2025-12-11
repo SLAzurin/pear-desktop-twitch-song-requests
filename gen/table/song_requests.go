@@ -17,12 +17,10 @@ type songRequestsTable struct {
 	sqlite.Table
 
 	// Columns
-	ID          sqlite.ColumnInteger
-	UserID      sqlite.ColumnString
-	SongTitle   sqlite.ColumnString
-	ArtistName  sqlite.ColumnString
-	VideoID     sqlite.ColumnString
-	RequestedAt sqlite.ColumnString
+	VideoID    sqlite.ColumnString
+	SongTitle  sqlite.ColumnString
+	ArtistName sqlite.ColumnString
+	ImageURL   sqlite.ColumnString
 
 	AllColumns     sqlite.ColumnList
 	MutableColumns sqlite.ColumnList
@@ -64,27 +62,23 @@ func newSongRequestsTable(schemaName, tableName, alias string) *SongRequestsTabl
 
 func newSongRequestsTableImpl(schemaName, tableName, alias string) songRequestsTable {
 	var (
-		IDColumn          = sqlite.IntegerColumn("id")
-		UserIDColumn      = sqlite.StringColumn("user_id")
-		SongTitleColumn   = sqlite.StringColumn("song_title")
-		ArtistNameColumn  = sqlite.StringColumn("artist_name")
-		VideoIDColumn     = sqlite.StringColumn("video_id")
-		RequestedAtColumn = sqlite.StringColumn("requested_at")
-		allColumns        = sqlite.ColumnList{IDColumn, UserIDColumn, SongTitleColumn, ArtistNameColumn, VideoIDColumn, RequestedAtColumn}
-		mutableColumns    = sqlite.ColumnList{UserIDColumn, SongTitleColumn, ArtistNameColumn, VideoIDColumn, RequestedAtColumn}
-		defaultColumns    = sqlite.ColumnList{RequestedAtColumn}
+		VideoIDColumn    = sqlite.StringColumn("video_id")
+		SongTitleColumn  = sqlite.StringColumn("song_title")
+		ArtistNameColumn = sqlite.StringColumn("artist_name")
+		ImageURLColumn   = sqlite.StringColumn("image_url")
+		allColumns       = sqlite.ColumnList{VideoIDColumn, SongTitleColumn, ArtistNameColumn, ImageURLColumn}
+		mutableColumns   = sqlite.ColumnList{SongTitleColumn, ArtistNameColumn, ImageURLColumn}
+		defaultColumns   = sqlite.ColumnList{}
 	)
 
 	return songRequestsTable{
 		Table: sqlite.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:          IDColumn,
-		UserID:      UserIDColumn,
-		SongTitle:   SongTitleColumn,
-		ArtistName:  ArtistNameColumn,
-		VideoID:     VideoIDColumn,
-		RequestedAt: RequestedAtColumn,
+		VideoID:    VideoIDColumn,
+		SongTitle:  SongTitleColumn,
+		ArtistName: ArtistNameColumn,
+		ImageURL:   ImageURLColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,
