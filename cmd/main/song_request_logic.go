@@ -190,6 +190,9 @@ OuterLoop:
 				if v.PlaylistPanelVideoRenderer.Selected {
 					nowIndex = i
 				}
+				if nowIndex == -1 {
+					continue
+				}
 				if nowIndex != -1 && afterVideoId == v.PlaylistPanelVideoRenderer.VideoId {
 					afterVideoIndex = i
 				}
