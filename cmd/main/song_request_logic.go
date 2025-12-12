@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/azuridayo/pear-desktop-twitch-song-requests/gen/model"
@@ -64,7 +65,11 @@ func (a *App) songRequestLogic(song *songrequests.SongResult, event twitch.Event
 		})
 		return
 	}
-	log.Println("INTERNAL: Queued song " + song.Title + " - " + song.Artist)
+	if strings.EqualFold(event.BroadcasterUserLogin, a.twitchDataStructBot.login) {
+		log.Println("hehe chatter " + event.ChatterUserLogin + ": Queued song " + song.Title + " - " + song.Artist)
+	} else {
+		log.Println(event.ChatterUserLogin + ": Queued song " + song.Title + " - " + song.Artist)
+	}
 
 	nowIndex := -1
 	addedSongIndex := -1
