@@ -44,10 +44,6 @@ func (s *TwitchWS) StartCtx(ctx context.Context) error {
 				condition["user_id"] = *s.mainUserId
 				subChannelChatMessageItr++
 			}
-			if event == twitch.SubChannelChatMessage && subChannelChatMessageItr > 0 {
-				condition["user_id"] = *s.botUserId
-				subChannelChatMessageItr++
-			}
 
 			_, err := twitch.SubscribeEvent(twitch.SubscribeRequest{
 				SessionID:   message.Payload.Session.ID,

@@ -53,10 +53,13 @@ func (a *App) SetSubscriptionHandlers() {
 			}
 		}
 		var useProperHelix *helix.Client
+		properUserID := ""
 		if a.twitchDataStructBot.isAuthenticated {
 			useProperHelix = a.helixBot
+			properUserID = a.twitchDataStructBot.userID
 		} else {
 			useProperHelix = a.helix
+			properUserID = a.twitchDataStruct.userID
 		}
 
 		log.Printf("Chat message from %s: %s %s\n", event.ChatterUserLogin, event.Message.Text, event.ChannelPointsCustomRewardId)
@@ -101,7 +104,7 @@ func (a *App) SetSubscriptionHandlers() {
 				log.Println(emsg, err)
 				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              emsg,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -113,7 +116,7 @@ func (a *App) SetSubscriptionHandlers() {
 				log.Println(emsg, err)
 				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              emsg,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -126,7 +129,7 @@ func (a *App) SetSubscriptionHandlers() {
 				log.Println(emsg, err)
 				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              emsg,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -149,7 +152,7 @@ func (a *App) SetSubscriptionHandlers() {
 				msg := "Song is already in queue!"
 				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              msg,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -159,7 +162,7 @@ func (a *App) SetSubscriptionHandlers() {
 			// Committing to adding song to q
 			useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
 				BroadcasterID:        event.BroadcasterUserId,
-				SenderID:             a.twitchDataStruct.userID,
+				SenderID:             properUserID,
 				Message:              "Added song: " + song.Title + " - " + song.Artist + " " + "https://youtu.be/" + song.VideoID,
 				ReplyParentMessageID: event.MessageId,
 			})
@@ -195,7 +198,7 @@ func (a *App) SetSubscriptionHandlers() {
 				}
 				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              s,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -235,14 +238,14 @@ func (a *App) SetSubscriptionHandlers() {
 				log.Println("Failed to get song info from !song", rootErr)
 				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              "Internal failure to get song details!",
 					ReplyParentMessageID: event.MessageId,
 				})
 			} else {
 				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              "Song: " + song.Title + " - " + song.Artist + " https://youtu.be/" + song.VideoID,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -304,7 +307,7 @@ func (a *App) SetSubscriptionHandlers() {
 				log.Println("Failed to get queue info from !queue", rootErr)
 				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              "Internal failure to get queue detail!",
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -335,7 +338,7 @@ func (a *App) SetSubscriptionHandlers() {
 
 				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              s,
 					ReplyParentMessageID: event.MessageId,
 				})

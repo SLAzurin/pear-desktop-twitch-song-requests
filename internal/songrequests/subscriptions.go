@@ -18,7 +18,6 @@ func GetSubscriptions() []twitch.EventSubscription {
 func GetSubscriptionsBot() []twitch.EventSubscription {
 	events := []twitch.EventSubscription{
 		twitch.SubChannelChatMessage,
-		twitch.SubChannelChatMessage,
 	}
 
 	return events

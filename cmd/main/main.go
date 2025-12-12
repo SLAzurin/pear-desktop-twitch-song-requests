@@ -168,7 +168,7 @@ func (a *App) Run() error {
 			if a.helixBot.GetUserAccessToken() != "" {
 				valid, _, _ := a.helixBot.ValidateToken(a.helixBot.GetUserAccessToken())
 				if valid {
-					err := a.twitchWSService.StartCtx(a.ctx)
+					err := a.twitchWSBotService.StartCtx(a.ctx)
 					if err == nil {
 						// graceful shutdown
 						return
