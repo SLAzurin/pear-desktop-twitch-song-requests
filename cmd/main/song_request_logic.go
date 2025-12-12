@@ -12,6 +12,7 @@ import (
 
 	"github.com/azuridayo/pear-desktop-twitch-song-requests/gen/model"
 	. "github.com/azuridayo/pear-desktop-twitch-song-requests/gen/table"
+	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/data"
 	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/databaseconn"
 	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/songrequests"
 	"github.com/joeyak/go-twitch-eventsub/v3"
@@ -91,7 +92,7 @@ func (a *App) songRequestLogic(song *songrequests.SongResult, event twitch.Event
 		srrData := model.SongRequestRequesters{
 			VideoID:        song.VideoID,
 			TwitchUsername: event.ChatterUserLogin,
-			RequestedAt:    time.Now().Local().Format(time.RFC1123),
+			RequestedAt:    time.Now().Local().Format(data.TWITCH_SERVER_DATE_LAYOUT),
 		}
 		stmt = SongRequestRequesters.INSERT(SongRequestRequesters.AllColumns).MODEL(srrData)
 		_, err = stmt.Exec(db)

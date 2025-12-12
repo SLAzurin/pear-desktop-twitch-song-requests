@@ -129,21 +129,14 @@ func (a *App) processTwitchOAuth(c echo.Context) error {
 				"error": "Failed to save token in database",
 			})
 		}
-		var b echo.Map
-		if tokenForBot {
-			b = echo.Map{
-				"type":            "TWITCH_INFO",
-				"login_bot":       a.twitchDataStructBot.login,
-				"expiry_date_bot": t.Format(data.TWITCH_SERVER_DATE_LAYOUT),
-			}
-		} else {
-			b = echo.Map{
-				"type":          "TWITCH_INFO",
-				"login":         a.twitchDataStruct.login,
-				"expiry_date":   t.Format(data.TWITCH_SERVER_DATE_LAYOUT),
-				"stream_online": a.streamOnline,
-				"reward_id":     a.songRequestRewardID,
-			}
+		b := echo.Map{
+			"type":            "TWITCH_INFO",
+			"login":           a.twitchDataStruct.login,
+			"stream_online":   a.streamOnline,
+			"reward_id":       a.songRequestRewardID,
+			"login_bot":       a.twitchDataStructBot.login,
+			"expiry_date":     a.twitchDataStruct.expiresDate.Local().Format(data.TWITCH_SERVER_DATE_LAYOUT),
+			"expiry_date_bot": a.twitchDataStructBot.expiresDate.Local().Format(data.TWITCH_SERVER_DATE_LAYOUT),
 		}
 		bb, _ := json.Marshal(b)
 		a.clientsBroadcast <- string(bb)

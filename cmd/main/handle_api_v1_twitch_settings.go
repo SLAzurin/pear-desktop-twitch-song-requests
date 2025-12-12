@@ -54,11 +54,13 @@ func (a *App) processTwitchSettings(c echo.Context) error {
 	}
 
 	b := echo.Map{
-		"type":          "TWITCH_INFO",
-		"login":         a.twitchDataStruct.login,
-		"expiry_date":   a.twitchDataStruct.expiresDate.Local().Format(data.TWITCH_SERVER_DATE_LAYOUT),
-		"stream_online": a.streamOnline,
-		"reward_id":     a.songRequestRewardID,
+		"type":            "TWITCH_INFO",
+		"login":           a.twitchDataStruct.login,
+		"expiry_date":     a.twitchDataStruct.expiresDate.Local().Format(data.TWITCH_SERVER_DATE_LAYOUT),
+		"stream_online":   a.streamOnline,
+		"reward_id":       a.songRequestRewardID,
+		"login_bot":       a.twitchDataStructBot.login,
+		"expiry_date_bot": a.twitchDataStructBot.expiresDate.Local().Format(data.TWITCH_SERVER_DATE_LAYOUT),
 	}
 	bb, _ := json.Marshal(b)
 	a.clientsBroadcast <- string(bb)
