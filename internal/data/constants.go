@@ -10,6 +10,7 @@ func GetTwitchClientID() string {
 
 const (
 	DB_KEY_TWITCH_ACCESS_TOKEN           = "twitch_access_token"
+	DB_KEY_TWITCH_ACCESS_TOKEN_BOT       = "twitch_access_token_bot"
 	DB_KEY_TWITCH_SONG_REQUEST_REWARD_ID = "twitch_song_request_reward_id"
 	TWITCH_SERVER_DATE_LAYOUT            = time.RFC1123
 )

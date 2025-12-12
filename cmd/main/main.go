@@ -26,7 +26,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-type twitchData = struct {
+type twitchData struct {
 	accessToken     string
 	login           string
 	userID          string
@@ -52,7 +52,9 @@ func main() {
 
 type App struct {
 	twitchDataStruct        *twitchData
+	twitchDataStructBot     *twitchData
 	helix                   *helix.Client
+	helixBot                *helix.Client
 	twitchWSService         *appservices.TwitchWS
 	streamOnline            bool
 	twitchWSIncomingMsgs    chan []byte
@@ -72,9 +74,11 @@ func NewApp() *App {
 	})
 	return &App{
 		twitchDataStruct:        &twitchData{},
+		twitchDataStructBot:     &twitchData{},
 		ctx:                     ctx,
 		cancel:                  cancel,
 		helix:                   c,
+		helixBot:                nil,
 		clientsBroadcast:        make(chan string),
 		twitchWSIncomingMsgs:    make(chan []byte),
 		clientsMu:               sync.RWMutex{},

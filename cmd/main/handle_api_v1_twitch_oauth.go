@@ -34,6 +34,7 @@ func (a *App) processTwitchOAuth(c echo.Context) error {
 		State       string `json:"state,omitempty"`
 		TokenType   string `json:"token_type"`
 	}{}
+	tokenForBot := authData.State == "bot"
 	err = json.Unmarshal(rawBodyData, &authData)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{
@@ -74,21 +75,48 @@ func (a *App) processTwitchOAuth(c echo.Context) error {
 		defer func() {
 			db.Close()
 		}()
-		a.helix.SetUserAccessToken(authData.AccessToken)
-		a.twitchDataStruct.expiresDate = t
-		a.twitchDataStruct.isAuthenticated = true
-		a.twitchDataStruct.userID = response.Data.UserID
-		a.twitchDataStruct.login = response.Data.Login
+		selectedHelix := a.helix
+		selectedTwitchDataStruct := a.twitchDataStruct
+		if tokenForBot {
+			if a.twitchDataStruct.login == "" {
+				return c.JSON(http.StatusInternalServerError, echo.Map{
+					"error": "cannot save bot token before main token",
+				})
+			}
+			if a.helixBot == nil {
+				a.helixBot, err = helix.NewClient(&helix.Options{
+					ClientID: data.GetTwitchClientID(),
+				})
+				if err != nil {
+					return c.JSON(http.StatusInternalServerError, echo.Map{
+						"error": "bot token validation failed preflight",
+					})
+				}
+			}
+			selectedHelix = a.helixBot
+			selectedTwitchDataStruct = a.twitchDataStructBot
+		}
+		selectedHelix.SetUserAccessToken(authData.AccessToken)
+		selectedTwitchDataStruct.accessToken = authData.AccessToken
+		selectedTwitchDataStruct.expiresDate = t
+		selectedTwitchDataStruct.isAuthenticated = true
+		selectedTwitchDataStruct.userID = response.Data.UserID
+		selectedTwitchDataStruct.login = response.Data.Login
+		dbSaveKey := data.DB_KEY_TWITCH_ACCESS_TOKEN
 
-		resp, err := a.helix.GetStreams(&helix.StreamsParams{
-			UserLogins: []string{a.twitchDataStruct.login},
-		})
-		if err == nil && len(resp.Data.Streams) > 0 && resp.Data.Streams[0].ID != "" {
-			a.streamOnline = true
+		if tokenForBot {
+			dbSaveKey = data.DB_KEY_TWITCH_ACCESS_TOKEN_BOT
+		} else {
+			resp, err := a.helix.GetStreams(&helix.StreamsParams{
+				UserLogins: []string{a.twitchDataStruct.login},
+			})
+			if err == nil && len(resp.Data.Streams) > 0 && resp.Data.Streams[0].ID != "" {
+				a.streamOnline = true
+			}
 		}
 
 		newToken := model.Settings{
-			Key:   data.DB_KEY_TWITCH_ACCESS_TOKEN,
+			Key:   dbSaveKey,
 			Value: authData.AccessToken,
 		}
 		stmt := Settings.INSERT(Settings.AllColumns).MODEL(newToken).ON_CONFLICT(Settings.Key).DO_UPDATE(SET(
@@ -101,15 +129,18 @@ func (a *App) processTwitchOAuth(c echo.Context) error {
 				"error": "Failed to save token in database",
 			})
 		}
-		b := echo.Map{
-			"type":          "TWITCH_INFO",
-			"login":         a.twitchDataStruct.login,
-			"expiry_date":   t.Format(data.TWITCH_SERVER_DATE_LAYOUT),
-			"stream_online": a.streamOnline,
-			"reward_id":     a.songRequestRewardID,
+		if !tokenForBot {
+			b := echo.Map{
+				"type":          "TWITCH_INFO",
+				"login":         a.twitchDataStruct.login,
+				"expiry_date":   t.Format(data.TWITCH_SERVER_DATE_LAYOUT),
+				"stream_online": a.streamOnline,
+				"reward_id":     a.songRequestRewardID,
+			}
+			bb, _ := json.Marshal(b)
+			a.clientsBroadcast <- string(bb)
 		}
-		bb, _ := json.Marshal(b)
-		a.clientsBroadcast <- string(bb)
+
 		return c.NoContent(http.StatusOK)
 	} else {
 		return c.NoContent(http.StatusUnauthorized)
