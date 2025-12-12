@@ -11,16 +11,19 @@ import (
 	"github.com/joeyak/go-twitch-eventsub/v3"
 )
 
+// mistake in the code, bot means secondary, main means main. so you will see the inverse for bot mode
 type TwitchWS struct {
 	botTwitchChannel  *string
 	mainTwitchChannel *string
 	mainUserId        *string
 	botUserId         *string
 	helixMain         *helix.Client
+	helixBot          *helix.Client
 	client            *twitch.Client
 	log               *log.Logger
 	subs              []twitch.EventSubscription
 	setupHandlers     func()
+	isBotMode         bool
 }
 
 func (s *TwitchWS) StartCtx(ctx context.Context) error {
@@ -32,12 +35,18 @@ func (s *TwitchWS) StartCtx(ctx context.Context) error {
 		clientID := data.GetTwitchClientID()
 		accessToken := s.helixMain.GetUserAccessToken()
 
+		subChannelChatMessageItr := 0
 		for _, event := range s.subs {
 			condition := map[string]string{
 				"broadcaster_user_id": *s.mainUserId,
 			}
-			if event == twitch.SubChannelChatMessage {
+			if event == twitch.SubChannelChatMessage && subChannelChatMessageItr == 0 {
 				condition["user_id"] = *s.mainUserId
+				subChannelChatMessageItr++
+			}
+			if event == twitch.SubChannelChatMessage && subChannelChatMessageItr > 0 {
+				condition["user_id"] = *s.botUserId
+				subChannelChatMessageItr++
 			}
 
 			_, err := twitch.SubscribeEvent(twitch.SubscribeRequest{
@@ -54,9 +63,13 @@ func (s *TwitchWS) StartCtx(ctx context.Context) error {
 			}
 		}
 		if hasSubError {
-			s.log.Printf("There were issues when listening to Twitch events. Please refresh your Twitch token and restart the app.")
+			s.log.Printf("There were issues when listening to Twitch events. Please refresh your Twitch token(s) and restart the app.")
 		} else {
-			s.log.Println("Connected to Twitch")
+			if s.isBotMode {
+				s.log.Println("Connected to Twitch as bot")
+			} else {
+				s.log.Println("Connected to Twitch as main account")
+			}
 		}
 	})
 	s.client.OnRevoke(func(message twitch.RevokeMessage) {
@@ -75,16 +88,18 @@ func (s *TwitchWS) Log() *log.Logger {
 	return s.log
 }
 
-func NewTwitchWS(hc *helix.Client, mainUserId *string, mainTwitchChannel *string, helixBot *helix.Client, botUserId *string, botTwitchChannel *string, subs []twitch.EventSubscription, setupHandlers func()) *TwitchWS {
+func NewTwitchWS(hc *helix.Client, mainUserId *string, mainTwitchChannel *string, helixBot *helix.Client, botUserId *string, botTwitchChannel *string, subs []twitch.EventSubscription, setupHandlers func(), isBotMode bool) *TwitchWS {
 	s := &TwitchWS{
 		botTwitchChannel:  botTwitchChannel,
 		mainTwitchChannel: mainTwitchChannel,
 		mainUserId:        mainUserId,
 		botUserId:         botUserId,
 		helixMain:         hc,
+		helixBot:          helixBot,
 		log:               log.New(os.Stderr, "", log.Ldate|log.Ltime),
 		subs:              subs,
 		setupHandlers:     setupHandlers,
+		isBotMode:         isBotMode,
 	}
 
 	return s

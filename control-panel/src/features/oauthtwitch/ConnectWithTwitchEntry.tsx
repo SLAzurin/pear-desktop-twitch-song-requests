@@ -18,7 +18,12 @@ function ConnectWithTwitchEntry(props: { forBot: boolean }) {
 		);
 		const scopes = ["user:read:chat", "user:write:chat", "user:bot"];
 		if (!props.forBot) {
-			scopes.push("channel:read:redemptions");
+			scopes.push(
+				"channel:read:redemptions",
+				"channel:read:vips",
+				"moderation:read",
+				"channel:read:subscriptions",
+			);
 		}
 		params.append("scope", scopes.join(" "));
 		if (props.forBot) {

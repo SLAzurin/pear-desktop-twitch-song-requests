@@ -12,55 +12,92 @@ import (
 
 	"github.com/azuridayo/pear-desktop-twitch-song-requests/internal/songrequests"
 	"github.com/joeyak/go-twitch-eventsub/v3"
-	"github.com/labstack/echo/v4"
 	"github.com/nicklaw5/helix/v2"
 )
 
-func (a *App) SetSubscriptionHandlers() {
-	a.twitchWSService.Client().OnEventStreamOnline(func(event twitch.EventStreamOnline) {
-		a.streamOnline = true
+var checkMainChannelUserStatusMutex = sync.RWMutex{}
+var checkMainChannelUserStatus = map[string]struct {
+	isSub       bool
+	isModerator bool
+	timeExpiry  time.Time
+}{}
 
-		j, _ := json.Marshal(echo.Map{
-			"stream_online": true,
-		})
-		a.clientsBroadcast <- string(j)
-		log.Println("STREAM_ONLINE")
-	})
-	a.twitchWSService.Client().OnEventStreamOffline(func(event twitch.EventStreamOffline) {
-		a.streamOnline = false
-		j, _ := json.Marshal(echo.Map{
-			"stream_online": false,
-		})
-		a.clientsBroadcast <- string(j)
-		log.Println("STREAM_OFFLINE")
-	})
+// TODO REVIEW THIS ENTIRELY
+func (a *App) SetSubscriptionHandlersBot() {
 	a.twitchWSService.Client().OnEventChannelChatMessage(func(event twitch.EventChannelChatMessage) {
 		isSub := false
 		isBroadcaster := false
 		isModerator := false
-		for _, v := range event.Badges {
-			if v.SetId == "subscriber" {
-				isSub = true
-			}
-			if v.SetId == "broadcaster" {
-				isBroadcaster = true
-				isModerator = true
-				isSub = true
-			}
-			if v.SetId == "moderator" {
-				isModerator = true
-				isSub = true
-			}
-		}
-		var useProperHelix *helix.Client
-		if a.twitchDataStructBot.isAuthenticated {
-			useProperHelix = a.helixBot
+		properUserID := a.twitchDataStructBot.userID
+		realBroadcasterID := a.twitchDataStruct.userID
+
+		if strings.EqualFold(event.ChatterUserLogin, a.twitchDataStruct.login) {
+			isSub = true
+			isBroadcaster = true
+			isModerator = true
 		} else {
-			useProperHelix = a.helix
+			checkMainChannelUserStatusMutex.RLock()
+			if v, ok := checkMainChannelUserStatus[event.ChatterUserLogin]; ok && !time.Now().After(v.timeExpiry) {
+				isSub = v.isSub
+				isModerator = v.isModerator
+				checkMainChannelUserStatusMutex.RUnlock()
+			} else {
+				checkMainChannelUserStatusMutex.RUnlock()
+
+				subsResponse, err := a.helix.GetSubscriptions(&helix.SubscriptionsParams{
+					UserID:        []string{event.ChatterUserId},
+					BroadcasterID: realBroadcasterID,
+				})
+				if err != nil {
+					emsg := "Internal error when checking if you are a sub"
+					log.Println(emsg, err)
+					a.helixBot.SendChatMessage(&helix.SendChatMessageParams{
+						BroadcasterID:        event.BroadcasterUserId,
+						SenderID:             properUserID,
+						Message:              emsg,
+						ReplyParentMessageID: event.MessageId,
+					})
+					return
+				}
+				if len(subsResponse.Data.Subscriptions) > 0 {
+					isSub = true
+				}
+
+				modsResponse, err := a.helix.GetModerators(&helix.GetModeratorsParams{
+					UserIDs:       []string{event.ChatterUserId},
+					BroadcasterID: realBroadcasterID,
+				})
+				if err != nil {
+					emsg := "Internal error when checking if you are a moderator"
+					log.Println(emsg, err)
+					a.helixBot.SendChatMessage(&helix.SendChatMessageParams{
+						BroadcasterID:        event.BroadcasterUserId,
+						SenderID:             properUserID,
+						Message:              emsg,
+						ReplyParentMessageID: event.MessageId,
+					})
+					return
+				}
+				if len(modsResponse.Data.Moderators) > 0 {
+					isSub = true
+					isModerator = true
+				}
+
+				checkMainChannelUserStatusMutex.Lock()
+				checkMainChannelUserStatus[event.ChatterUserLogin] = struct {
+					isSub       bool
+					isModerator bool
+					timeExpiry  time.Time
+				}{
+					isSub:       isSub,
+					isModerator: isModerator,
+					timeExpiry:  time.Now().Add(time.Hour * 2),
+				}
+				checkMainChannelUserStatusMutex.Unlock()
+			}
 		}
 
-		log.Printf("Chat message from %s: %s %s\n", event.ChatterUserLogin, event.Message.Text, event.ChannelPointsCustomRewardId)
-		if a.songRequestRewardID == event.ChannelPointsCustomRewardId || (strings.HasPrefix(event.Message.Text, "!sr ") && isSub) {
+		if strings.HasPrefix(event.Message.Text, "!sr ") && isSub {
 			if !a.streamOnline && !isBroadcaster {
 				return
 			}
@@ -99,9 +136,9 @@ func (a *App) SetSubscriptionHandlers() {
 			if err != nil || preResponse.StatusCode != http.StatusOK {
 				emsg := "Internal error when checking if song is already in queue"
 				log.Println(emsg, err)
-				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
+				a.helixBot.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              emsg,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -111,9 +148,9 @@ func (a *App) SetSubscriptionHandlers() {
 			if err != nil {
 				emsg := "Internal error processing data to check if song is already in queue"
 				log.Println(emsg, err)
-				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
+				a.helixBot.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              emsg,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -124,9 +161,9 @@ func (a *App) SetSubscriptionHandlers() {
 			if err != nil {
 				emsg := "Failed to check if song exists in queue."
 				log.Println(emsg, err)
-				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
+				a.helixBot.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              emsg,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -147,9 +184,9 @@ func (a *App) SetSubscriptionHandlers() {
 
 			if songExistsInQueue {
 				msg := "Song is already in queue!"
-				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
+				a.helixBot.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              msg,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -157,9 +194,9 @@ func (a *App) SetSubscriptionHandlers() {
 			}
 
 			// Committing to adding song to q
-			useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
+			a.helixBot.SendChatMessage(&helix.SendChatMessageParams{
 				BroadcasterID:        event.BroadcasterUserId,
-				SenderID:             a.twitchDataStruct.userID,
+				SenderID:             properUserID,
 				Message:              "Added song: " + song.Title + " - " + song.Artist + " " + "https://youtu.be/" + song.VideoID,
 				ReplyParentMessageID: event.MessageId,
 			})
@@ -193,9 +230,9 @@ func (a *App) SetSubscriptionHandlers() {
 					s = "Skipped " + playerInfo.Song.AlternativeTitle + "!"
 					songQueueMutex.RUnlock()
 				}
-				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
+				a.helixBot.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              s,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -210,9 +247,9 @@ func (a *App) SetSubscriptionHandlers() {
 			failed := false
 			song := songrequests.SongResult{}
 			var rootErr error = nil
-			currentSongMutex.Lock()
-			if time.Now().After(lastUsedCurrentSong.Add(time.Second * -10)) {
-				lastUsedCurrentSong = time.Now()
+			currentSongMutexBot.Lock()
+			if time.Now().After(lastUsedCurrentSongBot.Add(time.Second * -10)) {
+				lastUsedCurrentSongBot = time.Now()
 				resp, err := http.Get("http://" + songrequests.GetPearDesktopHost() + "/api/v1/song")
 				if err == nil {
 					bb, err := io.ReadAll(resp.Body)
@@ -230,19 +267,19 @@ func (a *App) SetSubscriptionHandlers() {
 					rootErr = err
 				}
 			}
-			currentSongMutex.Unlock()
+			currentSongMutexBot.Unlock()
 			if failed {
 				log.Println("Failed to get song info from !song", rootErr)
-				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
+				a.helixBot.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              "Internal failure to get song details!",
 					ReplyParentMessageID: event.MessageId,
 				})
 			} else {
-				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
+				a.helixBot.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              "Song: " + song.Title + " - " + song.Artist + " https://youtu.be/" + song.VideoID,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -279,9 +316,9 @@ func (a *App) SetSubscriptionHandlers() {
 				} `json:"items"`
 			}{}
 			var rootErr error = nil
-			queueCmdMutex.Lock()
-			if time.Now().After(lastUsedQueueCmd.Add(time.Second * -10)) {
-				lastUsedQueueCmd = time.Now()
+			queueCmdMutexBot.Lock()
+			if time.Now().After(lastUsedQueueCmdBot.Add(time.Second * -10)) {
+				lastUsedQueueCmdBot = time.Now()
 				resp, err := http.Get("http://" + songrequests.GetPearDesktopHost() + "/api/v1/queue")
 				if err == nil {
 					bb, err := io.ReadAll(resp.Body)
@@ -299,12 +336,12 @@ func (a *App) SetSubscriptionHandlers() {
 					rootErr = err
 				}
 			}
-			queueCmdMutex.Unlock()
+			queueCmdMutexBot.Unlock()
 			if failed {
 				log.Println("Failed to get queue info from !queue", rootErr)
-				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
+				a.helixBot.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              "Internal failure to get queue detail!",
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -333,9 +370,9 @@ func (a *App) SetSubscriptionHandlers() {
 				}
 				s = strings.TrimSuffix(s, ", ")
 
-				useProperHelix.SendChatMessage(&helix.SendChatMessageParams{
+				a.helixBot.SendChatMessage(&helix.SendChatMessageParams{
 					BroadcasterID:        event.BroadcasterUserId,
-					SenderID:             a.twitchDataStruct.userID,
+					SenderID:             properUserID,
 					Message:              s,
 					ReplyParentMessageID: event.MessageId,
 				})
@@ -345,11 +382,8 @@ func (a *App) SetSubscriptionHandlers() {
 	})
 }
 
-var skipMutex = sync.Mutex{}
-var lastSkipped = time.Now().Add(time.Second * -10)
+var currentSongMutexBot = sync.Mutex{}
+var lastUsedCurrentSongBot = time.Now().Add(time.Second * -10)
 
-var currentSongMutex = sync.Mutex{}
-var lastUsedCurrentSong = time.Now().Add(time.Second * -10)
-
-var queueCmdMutex = sync.Mutex{}
-var lastUsedQueueCmd = time.Now().Add(time.Second * -10)
+var queueCmdMutexBot = sync.Mutex{}
+var lastUsedQueueCmdBot = time.Now().Add(time.Second * -10)
