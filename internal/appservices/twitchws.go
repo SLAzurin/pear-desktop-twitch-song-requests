@@ -39,14 +39,12 @@ func (s *TwitchWS) StartCtx(ctx context.Context) error {
 		clientID := data.GetTwitchClientID()
 		accessToken := s.helixMain.GetUserAccessToken()
 
-		subChannelChatMessageItr := 0
 		for _, event := range s.subs {
 			condition := map[string]string{
 				"broadcaster_user_id": *s.mainUserId,
 			}
-			if event == twitch.SubChannelChatMessage && subChannelChatMessageItr == 0 {
+			if event == twitch.SubChannelChatMessage {
 				condition["user_id"] = *s.mainUserId
-				subChannelChatMessageItr++
 			}
 
 			_, err := twitch.SubscribeEvent(twitch.SubscribeRequest{
