@@ -64,6 +64,7 @@ func (a *App) songRequestLogic(song *songrequests.SongResult, event twitch.Event
 		})
 		return
 	}
+	log.Println("INTERNAL: Queued song " + song.Title + " - " + song.Artist)
 
 	nowIndex := -1
 	addedSongIndex := -1
