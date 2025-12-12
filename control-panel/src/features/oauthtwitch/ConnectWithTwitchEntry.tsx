@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./ConnectWithTwitchEntry.css";
 
-function ConnectWithTwitchEntry() {
+function ConnectWithTwitchEntry(props: { forBot: boolean }) {
 	const [params, setParams] = useState<URLSearchParams>();
 
 	// on page load, set the oauth params
@@ -25,6 +25,9 @@ function ConnectWithTwitchEntry() {
 				"user:bot",
 			].join(" "),
 		);
+		if (props.forBot) {
+			params.append("state", "bot");
+		}
 		setParams(params);
 		/*
 			example fragment: #access_token=73d0f8mkabpbmjp921asv2jaidwxn&scope=channel%3Amanage%3Apolls+channel%3Aread%3Apolls&state=c3ab8aa609ea11e793ae92361f002671&token_type=bearer
@@ -35,7 +38,9 @@ function ConnectWithTwitchEntry() {
 	return (
 		<>
 			<a href={`https://id.twitch.tv/oauth2/authorize?${params}`}>
-				Connect with Twitch
+				{props.forBot
+					? "Connect with Twitch bot account"
+					: "Connect with Twitch main account"}
 			</a>
 		</>
 	);

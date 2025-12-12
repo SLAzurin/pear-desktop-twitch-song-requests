@@ -7,6 +7,8 @@ export interface ITwitchState {
 	hostname: string;
 	twitch_song_request_reward_id: string;
 	login: string;
+	expires_in_bot: string;
+	login_bot: string;
 }
 
 const initialState: ITwitchState = {
@@ -14,6 +16,8 @@ const initialState: ITwitchState = {
 	hostname: "127.0.0.1:3999",
 	twitch_song_request_reward_id: "",
 	login: "",
+	login_bot: "",
+	expires_in_bot: "",
 };
 
 export const twitchStateSlice = createSlice({

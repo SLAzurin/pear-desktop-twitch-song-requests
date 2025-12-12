@@ -29,7 +29,11 @@ root.render(
 					<Route path="/oauth">
 						<Route
 							path="twitch-connect"
-							element={<ConnectWithTwitchEntry />}
+							element={<ConnectWithTwitchEntry forBot={false} />}
+						/>
+						<Route
+							path="twitch-connect-bot"
+							element={<ConnectWithTwitchEntry forBot={true} />}
 						/>
 						<Route path="twitch-success" element={<TwitchSuccess />} />
 						<Route path="twitch" element={<ProcessTwitchOAuth />} />
