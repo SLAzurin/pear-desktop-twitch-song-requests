@@ -22,7 +22,6 @@ var checkMainChannelUserStatus = map[string]struct {
 	timeExpiry  time.Time
 }{}
 
-// TODO REVIEW THIS ENTIRELY
 func (a *App) SetSubscriptionHandlersBot() {
 	a.twitchWSBotService.Client().OnEventChannelChatMessage(func(event twitch.EventChannelChatMessage) {
 		isSub := false
